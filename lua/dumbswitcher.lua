@@ -173,7 +173,7 @@ M.peek_into_src = function()
     if seen_files[current_file] then return end
     seen_files[current_file] = true
     if M.is_header(current_file) then
-        local src_file = find_file(current_file, _SH.header_exts, _SH.header_dir, false)
+        local src_file = find_file(current_file, _SH.source_exts, _SH.source_dir, false)
         if not src_file then return end
 
         local buf = vim.api.nvim_create_buf(false, true)
