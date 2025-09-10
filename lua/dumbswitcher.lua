@@ -176,13 +176,16 @@ M.peek_into_src = function()
         local src_file = find_file(current_file, _SH.source_exts, _SH.source_dir, false)
         if not src_file then return end
 
-        local buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
-        vim.api.nvim_buf_set_name(buf, src_file)
+        local buf = vim.fn.bufnr(src_file)
+        if buf == -1 then
+            local buf = vim.api.nvim_create_buf(false, true)
+            vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+            vim.api.nvim_buf_set_name(buf, src_file)
 
-        vim.api.nvim_buf_call(buf, function()
-            vim.cmd("silent! edit " .. vim.fn.fnameescape(src_file))
-        end)
+            vim.api.nvim_buf_call(buf, function()
+                vim.cmd("silent! edit " .. vim.fn.fnameescape(src_file))
+            end)
+        end
     end
 end
 
