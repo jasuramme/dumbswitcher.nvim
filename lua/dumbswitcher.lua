@@ -12,6 +12,12 @@ local default_settings = {
 
 local _SH = {}
 
+local function _log(str)
+    if _SH.verbose then
+        print(str)
+    end
+end
+
 M.setup = function(opts)
     _SH = vim.tbl_extend("force", default_settings, opts or {})
 end
@@ -61,6 +67,7 @@ end
 
 
 local function file_exists(path)
+    _log('Check file exists ' .. path)
     local f = io.open(path, "r")
 	if f then
 		f:close()
@@ -72,7 +79,7 @@ end
 
 local function search_files_in_dir(dir, filename, extensions)
     dir = string.gsub(dir, '//+', '/')
-    if _SH.verbose then print('looking for ' .. filename .. ' in ' .. dir) end
+    _log('looking for ' .. filename .. ' in ' .. dir)
     for _, ext in ipairs(extensions) do
         local file = dir .. "/" .. filename .. "." .. ext
         if file_exists(file) then
@@ -83,11 +90,9 @@ local function search_files_in_dir(dir, filename, extensions)
 end
 
 local function find_file(path, extensions, search_dirs, use_grep)
-    if _SH.verbose then
-        print('Lookup file ' .. vim.inspect(path))
-        print('extensions ' .. vim.inspect(extensions))
-        print('search_dirs ' .. vim.inspect(search_dirs))
-    end
+    _log('Lookup file ' .. vim.inspect(path))
+    _log('extensions ' .. vim.inspect(extensions))
+    _log('search_dirs ' .. vim.inspect(search_dirs))
     local filename = vim.fn.fnamemodify(path, ":t:r")
     local dir_before = vim.fn.fnamemodify(path, ":h")
     local dir_after = ''
@@ -102,9 +107,9 @@ local function find_file(path, extensions, search_dirs, use_grep)
             else
                 iter_dir = dir_before .. "/" .. search_dir
             end
-            if _SH.verbose then print('looking for ' .. iter_dir) end
+            _log('looking for ' .. iter_dir)
             if file_exists(iter_dir) then
-                if _SH.verbose then print('found ' .. iter_dir) end
+                _log('found ' .. iter_dir)
                 local after = dir_after
                 local dir_to_search = ''
                 while after do
