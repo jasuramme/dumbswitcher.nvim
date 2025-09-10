@@ -176,7 +176,16 @@ M.peek_into_src = function()
         local src_file = find_file(current_file, _SH.source_exts, _SH.source_dir, false)
         if not src_file then return end
 
-        vim.cmd('badd ' .. src_file)
+        local current_buf = vim.api.nvim_get_current_buf()
+        vim.cmd('edit ' .. src_file)
+        local src_buf = vim.api.nvim_get_current_buf()
+        vim.api.nvim_set_current_buf(current_buf)
+
+        for _, client in ipairs(vim.lsp.get_active_clients()) do
+            if client.config.root_dir and vim.startswith(src_file, client.config.root_dir) then
+                vim.lsp.buf_attach_client(src_buf, client.id)    -- привязываем буфер
+            end
+        end
     end
 end
 
