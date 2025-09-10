@@ -6,7 +6,8 @@ local default_settings = {
     header_exts = { "h", "hpp", "hxx" },
     header_dir = { "inc" },
     absolute_dir = false,
-    root = nil
+    root = nil,
+    verbose = false
 }
 
 local _SH = {}
@@ -80,6 +81,11 @@ local function search_files_in_dir(dir, filename, extensions)
 end
 
 local function find_file(path, extensions, search_dirs, use_grep)
+    if _SH.verbose then
+        print('Lookup file ' .. vim.inspect(path))
+        print('extensions ' .. vim.inspect(extensions))
+        print('search_dirs ' .. vim.inspect(search_dirs))
+    end
     local filename = vim.fn.fnamemodify(path, ":t:r")
     local dir_before = vim.fn.fnamemodify(path, ":h")
     local dir_after = ''
@@ -94,6 +100,7 @@ local function find_file(path, extensions, search_dirs, use_grep)
             else
                 iter_dir = dir_before .. "/" .. search_dir
             end
+            if _SH.verbose then print('looking for ' .. iter_dir) end
             if file_exists(iter_dir) then
                 ret = search_files_in_dir(iter_dir, filename, extensions)
                 if ret then return ret end
