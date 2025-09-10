@@ -1,0 +1,157 @@
+local M = {}
+
+local default_settings = {
+    source_exts = { "c", "cpp", "cxx", "cc" },
+    source_dir = { "src" },
+    header_exts = { "h", "hpp", "hxx" },
+    header_dir = { "inc" },
+    absolute_dir = false,
+    root = nil
+}
+
+local _SH = {}
+
+local function init_globals()
+    if switch_header_settings == nil then switch_header_settings = default_settings end
+    _SH = switch_header_settings
+end
+
+M.is_source = function(filename)
+    init_globals()
+    local fileext = vim.fn.fnamemodify(filename, ":e")
+    if vim.tbl_contains(_SH.source_exts, fileext) then
+        return true
+    end
+    return false
+end
+
+M.is_header = function(filename)
+    init_globals()
+    local fileext = vim.fn.fnamemodify(filename, ":e")
+    if vim.tbl_contains(_SH.header_exts, fileext) then
+        return true
+    end
+    return false
+end
+
+local function get_root()
+    if _G.PROJECT_ROOT and _G.PROJECT_ROOT ~= "" then
+        return _G.PROJECT_ROOT
+    end
+    local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1] or ""
+    if git_root ~= "" then
+        return git_root
+    end
+    return vim.fn.getcwd()
+end
+
+
+local function up_a_dir(dir, path_after)
+    local parent = vim.fn.fnamemodify(dir, ":h")
+
+    if parent == dir or parent == "" then
+        return nil, path_after
+    end
+
+    local new_path_after = vim.fn.fnamemodify(dir, ":t")
+    if path_after ~= "" then
+        new_path_after = new_path_after .. "/" .. path_after
+    end
+
+    return parent, new_path_after
+end
+
+
+local function file_exists(path)
+    local f = io.open(path, "r")
+	if f then
+		f:close()
+		return true
+	else
+		return false
+	end
+end
+
+local function search_files_in_dir(dir, filename, extensions)
+    for _, ext in ipairs(extensions) do
+        local file = dir .. "/" .. filename .. "." .. ext
+        if file_exists(file) then
+            return file
+        end
+    end
+    return nil
+end
+
+local function find_file(path, extensions, search_dirs, use_grep)
+    local filename = vim.fn.fnamemodify(path, ":t:r")
+    local dir_before = vim.fn.fnamemodify(path, ":h")
+    local dir_after = ''
+    local ret = search_files_in_dir(dir_before, filename, extensions)
+    if ret then return ret end
+
+    while dir_before do
+        for _, search_dir in ipairs(search_dirs) do
+            local iter_dir
+            if _SH.absolute_dir then
+                iter_dir = search_dir
+            else
+                iter_dir = dir_before .. "/" .. search_dir
+            end
+            if file_exists(iter_dir) then
+                ret = search_files_in_dir(iter_dir, filename, extensions)
+                if ret then return ret end
+                if dir_after ~= '' then
+                    iter_dir = iter_dir .. "/" .. dir_after
+                end
+                ret = search_files_in_dir(iter_dir, filename, extensions)
+                if ret then return ret end
+            end
+        end
+        dir_before, dir_after = up_a_dir(dir_before, dir_after)
+    end
+    if use_grep then
+        local root
+        if _SH.root then
+            root = _SH.root
+        else
+            root = get_root()
+        end
+        for _, ext in ipairs(extensions) do
+            local pattern = root .. "/**/" .. filename .. "." .. ext
+            local matches = vim.fn.glob(pattern, true, true) -- флаг true возвращает список путей
+            if #matches > 0 then
+                return matches[1]
+            end
+        end
+    end
+    return nil
+end
+
+M._get_switch_file = function(use_grep)
+    init_globals()
+    local current_file = vim.api.nvim_buf_get_name(0)
+    local extensions = {}
+    local search_dirs = {}
+    if is_source(current_file) then
+        extensions = _SH.header_exts
+        search_dirs = _SH.header_dir
+    elseif is_header(current_file) then
+        extensions = _SH.source_exts
+        search_dirs = _SH.source_dir
+    else
+        return nil
+    end
+    return find_file(current_file, extensions, search_dirs, use_grep)
+end
+
+M.switch_source_header = function(use_grep)
+    init_globals()
+    local ret = _get_switch_file(use_grep)
+    if ret then
+        vim.cmd("edit " .. ret)
+    else
+        print("File not found.")
+    end
+end
+
+return M
