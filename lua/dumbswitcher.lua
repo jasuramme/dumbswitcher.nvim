@@ -71,6 +71,7 @@ local function file_exists(path)
 end
 
 local function search_files_in_dir(dir, filename, extensions)
+    if _SH.verbose then print('looking for ' .. filename .. ' in ' .. dir) end
     for _, ext in ipairs(extensions) do
         local file = dir .. "/" .. filename .. "." .. ext
         if file_exists(file) then
@@ -95,13 +96,14 @@ local function find_file(path, extensions, search_dirs, use_grep)
     while dir_before do
         for _, search_dir in ipairs(search_dirs) do
             local iter_dir
-            if _SH.absolute_dir then
+            if _SH.absolute_dir == true then
                 iter_dir = search_dir
             else
                 iter_dir = dir_before .. "/" .. search_dir
             end
             if _SH.verbose then print('looking for ' .. iter_dir) end
             if file_exists(iter_dir) then
+                if _SH.verbose then print('found ' .. iter_dir) end
                 ret = search_files_in_dir(iter_dir, filename, extensions)
                 if ret then return ret end
                 if dir_after ~= '' then
