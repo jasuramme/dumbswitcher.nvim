@@ -78,7 +78,7 @@ local function file_exists(path)
 end
 
 local function search_files_in_dir(dir, filename, extensions)
-    dir = string.gsub(dir, '//+', '/')
+    dir = string.gsub(dir, '//', '/')
     _log('looking for ' .. filename .. ' in ' .. dir)
     for _, ext in ipairs(extensions) do
         local file = dir .. "/" .. filename .. "." .. ext
