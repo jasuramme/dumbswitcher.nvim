@@ -166,4 +166,24 @@ M.switch_source_header = function(use_grep)
     end
 end
 
+local seen_files = {}
+
+M.peek_into_src = function()
+    local current_file = vim.api.nvim_buf_get_name(0)
+    if seen_files[current_file] then return end
+    seen_files[current_file] = true
+    if M.is_header(current_file) then
+        local src_file = find_file(current_file, _SH.header_exts, _SH.header_dir, false)
+        if not src_file then return end
+
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+        vim.api.nvim_buf_set_name(buf, src_file)
+
+        vim.api.nvim_buf_call(buf, function()
+            vim.cmd("silent! edit " .. vim.fn.fnameescape(src_file))
+        end)
+    end
+end
+
 return M
