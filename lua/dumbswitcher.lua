@@ -11,13 +11,11 @@ local default_settings = {
 
 local _SH = {}
 
-local function init_globals()
-    if switch_header_settings == nil then switch_header_settings = default_settings end
-    _SH = switch_header_settings
+M.setup = function(opts)
+    _SH = vim.tbl_extend("force", default_settings, opts or {})
 end
 
 M.is_source = function(filename)
-    init_globals()
     local fileext = vim.fn.fnamemodify(filename, ":e")
     if vim.tbl_contains(_SH.source_exts, fileext) then
         return true
@@ -26,7 +24,6 @@ M.is_source = function(filename)
 end
 
 M.is_header = function(filename)
-    init_globals()
     local fileext = vim.fn.fnamemodify(filename, ":e")
     if vim.tbl_contains(_SH.header_exts, fileext) then
         return true
@@ -128,14 +125,13 @@ local function find_file(path, extensions, search_dirs, use_grep)
 end
 
 M._get_switch_file = function(use_grep)
-    init_globals()
     local current_file = vim.api.nvim_buf_get_name(0)
     local extensions = {}
     local search_dirs = {}
-    if is_source(current_file) then
+    if M.is_source(current_file) then
         extensions = _SH.header_exts
         search_dirs = _SH.header_dir
-    elseif is_header(current_file) then
+    elseif M.is_header(current_file) then
         extensions = _SH.source_exts
         search_dirs = _SH.source_dir
     else
@@ -145,8 +141,7 @@ M._get_switch_file = function(use_grep)
 end
 
 M.switch_source_header = function(use_grep)
-    init_globals()
-    local ret = _get_switch_file(use_grep)
+    local ret = M._get_switch_file(use_grep)
     if ret then
         vim.cmd("edit " .. ret)
     else
