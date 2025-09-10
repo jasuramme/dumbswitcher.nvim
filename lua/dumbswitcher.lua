@@ -71,6 +71,7 @@ local function file_exists(path)
 end
 
 local function search_files_in_dir(dir, filename, extensions)
+    dir = string.gsub(dir, '//+', '/')
     if _SH.verbose then print('looking for ' .. filename .. ' in ' .. dir) end
     for _, ext in ipairs(extensions) do
         local file = dir .. "/" .. filename .. "." .. ext
@@ -104,13 +105,13 @@ local function find_file(path, extensions, search_dirs, use_grep)
             if _SH.verbose then print('looking for ' .. iter_dir) end
             if file_exists(iter_dir) then
                 if _SH.verbose then print('found ' .. iter_dir) end
-                ret = search_files_in_dir(iter_dir, filename, extensions)
-                if ret then return ret end
-                if dir_after ~= '' then
-                    iter_dir = iter_dir .. "/" .. dir_after
+                local after = dir_after
+                local dir_to_search = ''
+                while after do
+                    ret = search_files_in_dir(iter_dir .. '/' .. dir_to_search, filename, extensions)
+                    if ret then return ret end
+                    after, dir_to_search = up_a_dir(after, dir_to_search)
                 end
-                ret = search_files_in_dir(iter_dir, filename, extensions)
-                if ret then return ret end
             end
         end
         dir_before, dir_after = up_a_dir(dir_before, dir_after)
